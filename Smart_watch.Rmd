@@ -35,11 +35,14 @@ library(scales)
 
 ```{r, echo = FALSE, warning = FALSE, message = FALSE}
 # uploading the data
-all_info = read_csv("C:/Users/zarif/OneDrive/Desktop/STA 303/all_info.csv")
+all_info_url = "https://raw.githubusercontent.com/ZarifIshfar/Smart_watch_analysis/main/all_info.csv"
+all_info = read_csv(all_info_url)
 
-sm_sleep = read_csv("C:/Users/zarif/OneDrive/Desktop/STA 303/sm_sleep.csv")
+sm_sleep_url = "https://raw.githubusercontent.com/ZarifIshfar/Smart_watch_analysis/main/sm_sleep.csv"
+sm_sleep = read_csv(sm_sleep_url)
 
-fitness_tracker = read_csv("C:/Users/zarif/OneDrive/Desktop/STA 303/fitness_tracker.csv")
+fitness_url = "https://raw.githubusercontent.com/ZarifIshfar/Smart_watch_analysis/main/fitness_tracker.csv"
+fitness_tracker = read_csv(fitness_url)
 ```
 
 \newpage
