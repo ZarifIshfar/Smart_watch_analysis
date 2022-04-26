@@ -1,0 +1,372 @@
+---
+title: "Consulting Report for Mingar"
+author: "Report prepared by Zarif Ishfar"
+date: '2022-04-11'
+output:
+  html_document:
+    toc: yes
+    toc_depth: '2'
+    df_print: paged
+  pdf_document:
+    template: report.tex
+    toc: yes
+    toc_depth: 2
+lang: en
+subtitle: The customers base seems to be the same for old and new models. The watches do perform differently based on skin tone.
+titlepage: yes
+titlepage-color: 091FA1
+titlepage-text-color: FFFFFF
+titlepage-rule-color: FFFFFF
+titlepage-rule-height: 2
+---
+
+```{r, message = FALSE, echo=FALSE, warning  = FALSE}
+library(tidyverse)
+library(lme4)
+library(polite)
+library(lmtest)
+library(lubridate)
+library(eeptools)
+library(scales)
+# this should suppress all code and messages
+#knitr::opts_chunk$set(include=FALSE)
+```
+
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+# uploading the data
+all_info = read_csv("C:/Users/zarif/OneDrive/Desktop/STA 303/all_info.csv")
+
+sm_sleep = read_csv("C:/Users/zarif/OneDrive/Desktop/STA 303/sm_sleep.csv")
+
+fitness_tracker = read_csv("C:/Users/zarif/OneDrive/Desktop/STA 303/fitness_tracker.csv")
+```
+
+\newpage
+# Executive summary
+
+## Introduction
+
+The first part of this report will be analyzing the fitness watch market for Mingar and looking at differences between old and new customers. It will then list recommendation to attract new customers. The second part of this report will be looking at a possible issue regarding the performance of the watch when the user has a darker skin tone. It will then look at possible ways to resolve these issues. 
+
+## Analyzing customer database.
+
+To compare new and old customers, we looked at the information we had on customers who bought the older iDol and Run models and compared that to customers who bought the newer Active and Advance lines. One key difference between the two is that the newer Active and Advance models were significantly cheaper then the older models. To compare the customers we looked at three characteristics. First, we looked at the average income of customers based on their postal code. We found the customers of the new models had slightly less income but that could just be because of the lower price points. Next we looked at the gender of customers. We found that females buy more fitness watches than males. Lastly, we looked at the average age of customers. From the graph below we can see that on average, the age of old and new customers are roughly the same.
+
+```{r, echo = FALSE, fig.cap="Age distribution of customers.", fig.height=2}
+# create a plot with age of customers
+  
+all_info %>% 
+  ggplot(aes(x = age, colour = line)) +
+  geom_boxplot() +
+  scale_x_continuous(limits = c(0, 100)) +
+  labs(title = "Age of customers using each line of watch", x = "Age of customers",
+       caption = "Prepared by Zarif Ishfar") +
+  theme_minimal() +
+  scale_fill_brewer(palette = "Dark2")
+```
+
+### Recommendations
+
+Mingar should focus on trying to reduce their prices since at an average income of about $70,000 that is a very high amount and so they need to attract more customers with lower incomes. Mingar should also find ways to attract more male customers since on average, females are a bigger buyer fo fitness watches. Lastly, Mingar should look for ways to attract younger customers since at an average age about 47, they are attracting more older customers.
+
+## Analyzing performance based on skin tone.
+
+Mingar does not collect data on skin tones but have access to which skin tone emoji the customer uses the most. They also provided data on how long people sleep per night in minutes and how many flags were raised during their sleep. Using general additive modeling (GAM) we found there is no difference between different skin tones and the duration of sleep. However, looking at the graph below we can see their does seem to be different number of flags for different skin tones.
+
+```{r, echo=FALSE, fig.cap="Distribution of duration of sleep minutes based on Emoji usage.", fig.height=2}
+sm_sleep %>% 
+  ggplot(aes(x = flags, colour = emoji_modifier)) +
+  geom_boxplot() +
+  scale_x_continuous(limits = c(0, 30)) +
+  labs(title = "Number of flags for customers using each emoji", x = "Number of flags per night.",
+       caption = "Prepared by Zarif Ishfar") +
+  theme_minimal() +
+  scale_fill_brewer(palette = "Dark2")
+```
+
+### Recommendations 
+
+Although it seems all customers are getting roughly the same amount of sleep, there seems to be a difference in the quality of sleep customers are getting based on skin tone. Mingar should do more tests and studies to determine why the fitness watches raise different flage for different skin tones.  
+
+\newpage
+# Technical report
+
+## Introduction
+
+The fitness watch industry is a new and increasing industry and Mingar is taking advantage of the market by offering new and innovative watches. As their main competitor is Fitbit (Who has a large market share in the industry), Mingar is looking to take more and expand their own market. This report will look at two key issues the company is facing. The first will look at if customers of the newer models are different from customers of the older models and what they can do to attract more customers. Then we will look at an important issue that has been plaguing some customers where they claim that their darker skin is causing the watches to perform poorly.
+
+## Research questions
+
+As a small and growing market, customer preferences on which watch to buy will always be changing. The first models that where released by Mingar are called Idol and Run. These models were a bit pricier but still sold well. The later models were named Active and Advance and were a more affordable. The company wanted to know if there were any differences between the customers of the older models compared to the newer models. 
+
+### Exploring customer data with regards to watch preference
+
+The data Mingar was able to provide was the gender, age and postal code of their customers. I then scraped the median income of customers based on their postal code from the Canadian census data. 
+
+### Checking if price and income have an influence on peoples watch choice.
+
+Since smart watches are not something everyone needs, the biggest factor impending someones decision to buy one would be the price. Since Mingar has been able to provide data on their smart watches, we can check the average price of each line.
+
+```{r, echo = FALSE}
+mingar = fitness_tracker %>% 
+  filter(Brand == "Mingar")
+
+avg_price = mingar %>% 
+  group_by(Line) %>% 
+  summarise(Price = mean(`Recommended retail price`))
+tibble(avg_price) %>% 
+  knitr::kable(caption = "A table with average price of each Fitness watch line.")
+```
+
+We can see that the older lines called RUN and iDol are much more expensive than the newer Active and Advance lines. Since we have data on the median incomes of the postal code of customers, we can look at that to see the incomes of the customers.
+
+
+```{r, echo = FALSE, fig.cap="Median Income distribution"}
+# create a plot with age of customers
+  
+all_info %>% 
+  ggplot(aes(x = income, colour = line)) +
+  geom_boxplot() +
+  labs(title = "Income of customers using each line of watch", x = "Median Income of customers",
+       caption = "Prepared by Zarif Ishfar") +
+  theme_minimal() +
+  scale_fill_brewer(palette = "Dark2")
+
+# Looking at the average income in a table.
+avg_income = all_info %>% group_by(line) %>% summarise(income = mean(income))
+tibble(avg_income) %>% 
+  knitr::kable(caption = "A table with the average income of customers with each line.")
+```
+
+We can see that the incomes of the newer lines are a bit less than the older lines implying that  making cheaper watches will increase the customer base since more people will be able to afford it.
+
+### Checking if gender has an influence on which watch people buy.
+
+
+```{r, echo = FALSE,fig.cap="Which gender uses each line of watch."}
+# Create a plot with sex and type of watch
+
+all_info %>% 
+  ggplot(aes(x = line, fill = sex)) +
+  geom_bar(stat = "count") +
+  labs(title = "Number of customers using each line of watch based on sex", x = "Line Name", y = "Number of customers",
+       caption = "Prepared by Zarif Ishfar") +
+  theme_minimal() +
+  scale_fill_brewer(palette = "Set1")
+
+# Looking at a table of the information
+gen_sum = all_info %>% group_by(line, sex) %>% summarise(count = table(sex), .groups = "drop")
+tibble(gen_sum) %>% 
+  knitr::kable(caption = "A table with the number of customers with each gender.")
+```
+
+From the table and the graph, we can see that there seems to be more females who use each line of fitness watches compared to males and a small number of intersex people use them. Therefore, Mingar should see how to attract more males to use their watches.
+
+### Checking if age has an influence on who purchases fitness watches. 
+
+```{r, echo = FALSE, fig.cap="Age distribution of customers."}
+# create a plot with age of customers
+  
+all_info %>% 
+  ggplot(aes(x = age, colour = line)) +
+  geom_boxplot() +
+  scale_x_continuous(limits = c(0, 100)) +
+  labs(title = "Age of customers using each line of watch", x = "Age of customers",
+       caption = "Prepared by Zarif Ishfar") +
+  theme_minimal() +
+  scale_fill_brewer(palette = "Dark2")
+
+# Creating a table with average ages of each fitness watch.
+agg_sum = all_info %>% 
+  group_by(line) %>% 
+  summarise(age = mean(age))
+tibble(agg_sum) %>% 
+  knitr::kable(caption = "A table with the average age of each customer with each line.")
+```
+
+So we can see that the age of customers of the older and newer models are roughly the same so the same age demographic are the only ones buying fitness watches.
+
+## Checking if fitness watches have different performances depending on skin tone.
+
+## Research Question
+
+Mingar does not collect data on customers skin tone when they purchase fitness watches since that would be unethical. However, they have access to the skin tone of the emojis they use. They do not know the actual skin tone but a code for which shade emoji they use. To measure the performance of the device, we have access to the number of minutes the customer sleeps and how many quality flags occurred during their sleep. 
+
+### Checking if there is a relationship between duration of sleep and emoji selection.
+
+First, let's create a plot with each emoji and the number of hours the customer slept each night it recorded. 
+
+```{r, echo=FALSE, fig.cap="Distribution of duration of sleep minutes based on Emoji usage."}
+sm_sleep %>% 
+  ggplot(aes(x = duration, colour = emoji_modifier)) +
+  geom_boxplot() +
+  scale_x_continuous(limits = c(200, 520)) +
+  labs(title = "Amount of sleep for customers using each Emoji.", x = "Duration of sleep in minutes",
+       caption = "Prepared by Zarif Ishfar") +
+  theme_minimal() +
+  scale_fill_brewer(palette = "Set1")
+```
+
+From the graph it seems as on average, customers off different emojis get the same minutes of sleep. Let's look at the average duration of sleep.
+
+```{r, echo = FALSE}
+dur_avg = sm_sleep %>% 
+     group_by(emoji_modifier) %>% 
+     summarise(Duration = mean(duration))
+tibble(dur_avg) %>% 
+  knitr::kable(caption = "A table with the average duration of sleep based on emoji usage.")
+```
+
+Altough it seems close, there does seem to be some variation. We can run a GLM model to see if emoji affects duration of sleep.
+
+```{r, echo = FALSE, warning=FALSE, message=FALSE}
+rmod = glm(rescale(duration) ~ emoji_modifier, family = "binomial", data = sm_sleep)
+tibble('Model Coefficients' = rmod$coefficients) %>% 
+  knitr::kable(caption = "A table with the coefficients from the model.")
+```
+
+Looking at the coefficients we can see that people seem to get about the same number of minutes of sleep regardless of emoji. Since the coefficients are small, the difference in duration is not significant. 
+
+### Checking if there is a relationship between number of flags during sleep and emoji selection.
+
+We can also check if the number of flags while sleeping is correlated to which emoji they use. First lets plot the values.
+
+```{r, echo=FALSE, fig.cap="Distribution of duration of sleep minutes based on Emoji usage."}
+sm_sleep %>% 
+  ggplot(aes(x = flags, colour = emoji_modifier)) +
+  geom_boxplot() +
+  scale_x_continuous(limits = c(0, 30)) +
+  labs(title = "Number of flags for customers using each emoji", x = "Number of flags per night.",
+       caption = "Prepared by Zarif Ishfar") +
+  theme_minimal() +
+  scale_fill_brewer(palette = "Dark2")
+```
+
+From the graph it does seem that based on which color emoji customers use, there seems to be different number of flags each night. Let's look the average number of flags the customer gets every night. 
+
+```{r, echo = FALSE}
+fla_avg = sm_sleep %>% 
+     group_by(emoji_modifier) %>% 
+     summarise(Flags = mean(flags))
+tibble(fla_avg) %>% 
+  knitr::kable(caption = "A table with the average number of flags based on emoji usage.")
+```
+
+Clearly from the averages, there does seem to be variation in the number of flags based on what emoji the customer uses.
+
+```{r, echo = FALSE, warning=FALSE, message=FALSE}
+fmod = glm(rescale(flags) ~ emoji_modifier, family = "binomial", data = sm_sleep)
+tibble('Model Coefficients' = fmod$coefficients) %>% 
+  knitr::kable(caption = "A table with the coefficients from the model.")
+```
+
+Clearly from the coefficients, we can see the number of flags differs significantly depending on which emoji they use. Since the coefficients are large, there seems to be a large difference in the number of flags per sleep night with respect to skin tone.
+
+## Discussion
+
+This report looked at two questions Mingar has about their fitness watches. The first was about learning about the new Canadian Market. They specifically wanted to know how customers of their new Active and Advance lines where different from their old customers. First, the income of the newer models seemed to be slightly less but not significantly less. This could just be because of the lower selling price of the new models. In terms of gender, it seems that females prefer buying fitness watches over men. This may mean Mingar has to find ways to attract more males. When it comes to age, it seems like the same demographic of age uses the old and new models of watch. So it seems like the new customers are not really different from the old customers but they can probably attract more customer with their cheaper watches than their expensive ones. They should also find ways to attract younger customers as well. 
+
+The second topic Mingar wanted to know is if the watches performed poorly based on the skin tone of customers. We do not have access to the skin color of customers but do know which skin tone emoji they use. Using data we have of how many minutes the customer sleeps every night, we found no correlation between the two and saw that customers slept about the same regardless of which skin tone of emoji they use. However, when comparing which emoji to how many flags the fitness watch gets while they sleep, is seems to be higher for some emojis. Therefore, it could be true that the fitness watches perform poorly for users with darker skin but we can not be certain until we know which emoji modifier pertains to which skin tone. 
+
+Therefore, Mingar is attracting about the same population demographic with the new models as with the old models. They can focus on how to attract more male customers or find ways to make it cheaper so younger people can afford to buy it. They also clearly have a problem with the performance of the fitness watch with different skin tones. They will have to do more research and find out what is causing the watch to perform differently for different skin tones.
+
+### Strengths and limitations
+
+One limitation is that a lot of people lie when entering data into their fitness watch. There have been instances where people deliberately enter wrong information and so that could have skewed the results.
+
+Another limitation is that people do not always wear their fitness watch all day and so sleep readings could be off.
+
+Another limitation is that flags on the fitness watch could occur for other reasons than just quality flag during sleep session. These include possible missing data or wrong sensor data.
+
+Another limitation is that each census code does not connect to just one postal code and may connect to more than one. For this reason the median income data may be not accurate.
+
+\newpage
+# Consultant information
+
+Spared consulting is a professional consulting business with over 25 years of experience. They specialize in catering to different business needs and values the customer experience.
+
+## Consultant profiles
+
+**Zarif Ishfar**. Zarif is a junior consultant who has been working at Spared Consulting for 3 years. With a double major from the University of Toronto in Mathematics and statistics, Zarif is able to provide detail consulting reports to companies in various industries.
+
+
+## Code of ethical conduct
+
+We take private customer data very seriously and assure we will protect any sensitive information. First, the customer data does not include their names so they can not be identified by anyone at this company. We also make sure to not release the customer data to the public and will make sure the information is kept private.
+
+We also understand Canadian census data is sensitive information that should not be given out freely. For that reason we only scraped median income based on census code and did not scrape any other data.
+
+We also understand that converting census code to postal code is sensitive information that is used by the government to send mail to residents. For this reason after our conversion we then deleted the file so it is not released into any public domain.
+
+\newpage
+# References
+
+All graphics, plots, models and code are based loosely off of material from STA 303 at the Univeristy of Toronto. Website is https://sta303-bolton.github.io/sta303-w22-courseguide/index.html.   
+
+Data and instructions is from the Final Assessment given to students in STA 303. Instructions can be found at https://sta303-bolton.github.io/sta303-w22-final-project/. 
+
+\newpage
+# Appendix
+
+
+
+## Web scraping industry data on fitness tracker devices
+
+Mingus was able to provide data on not only their fitness watches but also from their main competitor Fitbit as well. I was able to scrape data from their website to use in my analysis. I did with the following code.
+
+
+```r
+# The following is to scrape the data from the Mingar website.
+url = "https://fitnesstrackerinfohub.netlify.app/"
+fitness = bow(url, user_agent = "Student at UofT using this for a class project", force = TRUE)
+htm = scrape(fitness)
+
+# The following is to get the device information
+fitness_tracker = htm %>% 
+  html_elements("table") %>% 
+  html_table() %>% 
+  pluck(1)
+
+```
+
+## Accessing Census data on median household income
+
+Using the website https://censusmapper.ca/, I was able to get census data from 2016 in Canada. Then I filtered out the median income based on census code in Canada. I was able to achieve this with the following code.
+
+```r
+options(cancensus.api_key = "CensusMapper_71ae05dee1cd64c63936e9b60ea7ba2e",
+        cancensus.cache_path = "cache") # this sets a folder for your cache
+
+
+# get all regions as at the 2016 Census (2020 not up yet)
+regions <- list_census_regions(dataset = "CA16")
+
+regions_filtered <-  regions %>% 
+  filter(level == "CSD") %>% # Figure out what CSD means in Census data
+  as_census_region_list()
+
+# This can take a while
+# We want to get household median income
+census_data_csd <- get_census(dataset='CA16', regions = regions_filtered,
+                          vectors=c("v_CA16_2397"), 
+                          level='CSD', geo_format = "sf")
+
+# Simplify to only needed variables
+median_income <- census_data_csd %>% 
+  as_tibble() %>% 
+  select(CSDuid = GeoUID, contains("median"), Population) %>% 
+  mutate(CSDuid = parse_number(CSDuid)) %>% 
+  rename(hhld_median_inc = 2)
+```
+
+## Accessing postcode conversion files
+
+Since the median income did not give me the actual postal code but a census code that maps Canada, I needed to convert the census code to the postal code. As a student at the University of Toronto, I have access to this conversion and so I was able to scrape the data from https://mdl.library.utoronto.ca/collections/numeric-data/census-canada/postal-code-conversion-file. I was able to achieve this with the following code. 
+
+```r
+dataset = read_sav("raw-data/pccfNat_fccpNat_082021sav.sav")
+
+postcode <- dataset %>% 
+  select(PC, CSDuid)
+```
